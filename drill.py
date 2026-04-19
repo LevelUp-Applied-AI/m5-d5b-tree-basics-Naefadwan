@@ -25,7 +25,9 @@ def train_decision_tree(X_train, y_train, max_depth=5, random_state=42):
         Fitted DecisionTreeClassifier.
     """
     # TODO: Create and fit a DecisionTreeClassifier
-    pass
+    tree = DecisionTreeClassifier(max_depth=max_depth, random_state=random_state)
+    tree.fit(X_train, y_train)
+    return tree
 
 
 def get_feature_importances(model, feature_names):
@@ -39,11 +41,14 @@ def get_feature_importances(model, feature_names):
         Dictionary mapping feature name to importance value, sorted descending.
     """
     # TODO: Extract importances and return as a sorted dictionary
-    pass
+    importances = model.feature_importances_
+    feature_importances = dict(zip(feature_names, importances))
+    sorted_importances = dict(sorted(feature_importances.items(), key=lambda x: x[1], reverse=True))
+    return sorted_importances
 
 
 def train_balanced_forest(X_train, y_train, X_test, y_test,
-                          n_estimators=100, random_state=42):
+                          n_estimators=100, threshold=0.3, random_state=42):
     """Train a RandomForest with balanced class weights and return metrics.
 
     Args:
@@ -57,7 +62,16 @@ def train_balanced_forest(X_train, y_train, X_test, y_test,
     """
     # TODO: Train RandomForestClassifier with class_weight='balanced',
     #       predict on test set, compute and return metrics
-    pass
+    forest = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state, class_weight='balanced')
+    forest.fit(X_train, y_train)
+    # Use predict_proba and apply threshold
+    y_probs = forest.predict_proba(X_test)[:, 1]
+    y_pred = (y_probs >= threshold).astype(int)
+    precision = precision_score(y_test, y_pred, zero_division=0)
+    recall = recall_score(y_test, y_pred, zero_division=0)
+    f1 = f1_score(y_test, y_pred, zero_division=0)
+    return {'precision': precision, 'recall': recall, 'f1': f1}
+    
 
 
 if __name__ == "__main__":
@@ -83,6 +97,6 @@ if __name__ == "__main__":
             print(f"Top features: {list(importances.items())[:3]}")
 
     # Task 3
-    metrics = train_balanced_forest(X_train, y_train, X_test, y_test)
+    metrics = train_balanced_forest(X_train, y_train, X_test, y_test, threshold=0.3)
     if metrics:
-        print(f"Balanced RF: {metrics}")
+        print(f"Balanced RF (threshold=0.3): {metrics}")
